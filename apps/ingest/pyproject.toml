@@ -1,0 +1,7 @@
+[project]
+name = "ingest"
+version = "0.1.0"
+description = "It collects real-time seismic data from global monitoring stations and feeds it into the prediction engine. It ensures a constant stream of accurate earthquake information for early tsunami detection."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
