@@ -16,6 +16,7 @@
   "files.exclude": {
     "**/node_modules": false,
     "**/.next": true,
-    "**/.wrangler": true
+    "**/.wrangler": true,
+    "**/__pycache__": true
   }
 }
