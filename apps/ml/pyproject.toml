@@ -4,4 +4,8 @@ version = "0.1.0"
 description = "It predicts tsunamis by analyzing earthquake signals in real time. It spots dangerous patterns early, giving life-saving warnings before waves hit coastal areas. A smart tool for safer shores."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "numpy>=2.4.2",
+    "pandas>=3.0.0",
+    "scikit-learn>=1.8.0",
+]
