@@ -1,0 +1,12 @@
+{
+  "name": "@mnemoraorg/pipeline",
+  "private": true,
+  "scripts": {
+    "dev": "uv run uvicorn src.main:app --reload --port 8000",
+    "build": "uv sync",
+    "start": "uv run uvicorn src.main:app --host 0.0.0.0 --port 8000",
+    "lint": "uv run ruff check .",
+    "format": "uv run ruff format .",
+    "check-types": "uv run mypy ."
+  }
+}
