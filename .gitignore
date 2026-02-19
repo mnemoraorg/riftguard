@@ -98,5 +98,5 @@ cover/
 .dmypy.json
 dmypy.json
 
-# PyCharm
+# Jetbrains
 .idea/
