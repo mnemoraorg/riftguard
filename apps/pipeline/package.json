@@ -2,9 +2,13 @@
   "name": "@mnemoraorg/pipeline",
   "private": true,
   "scripts": {
-    "dev": "uv run uvicorn src.main:app --reload --port 8000",
-    "build": "uv sync",
-    "start": "uv run uvicorn src.main:app --host 0.0.0.0 --port 8000",
+    "dev": "docker compose up pipeline",
+    "build": "docker compose build pipeline",
+    "start": "docker compose up -d pipeline",
+    "stop": "docker compose stop pipeline",
+    "down": "docker compose down",
+    "db:generate": "docker compose exec -w /app pipeline python -m alembic revision --autogenerate -m",
+    "db:migrate": "docker compose exec -w /app pipeline python -m alembic upgrade head",
     "lint": "uv run ruff check .",
     "format": "uv run ruff format .",
     "check-types": "uv run mypy ."

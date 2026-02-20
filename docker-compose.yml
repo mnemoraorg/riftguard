@@ -1,13 +1,41 @@
 services:
-  db:
-    image: postgres:15
+  pipeline:
+    build:
+      context: .
+      dockerfile: .infra/pipeline/Dockerfile
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: riftguard
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - USGS_BASE_URL=${USGS_BASE_URL}
+    volumes:
+      - ./apps/pipeline/src:/app/src
+      - ./apps/pipeline/alembic.ini:/app/alembic.ini
+      - ./apps/pipeline/migrations:/app/migrations
+    command: sh -c "python -m alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
-      - "5432:5432"
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -42,15 +70,17 @@ services:
     ports:
       - "5000:5000"
     environment:
-      mlflow_backend_store_uri: postgresql://postgres:password@db:5432/riftguard
+      mlflow_backend_store_uri: postgresql://${DB_USER}:${DB_PASS}@db:5432/${DB_NAME}
       mlflow_default_artifact_root: s3://mlflow/
       mlflow_s3_endpoint_url: http://minio:9000
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
     depends_on:
-      - db
-      - minio
-    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri postgresql://postgres:password@db:5432/riftguard --default-artifact-root s3://mlflow/ --serve-artifacts
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri postgresql://${DB_USER}:${DB_PASS}@db:5432/${DB_NAME} --default-artifact-root s3://mlflow/ --serve-artifacts
 
 volumes:
   postgres_data:
