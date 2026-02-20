@@ -49,3 +49,21 @@ bun run db:migrate
 ```
 
 _What this does:_ This runs `python -m alembic upgrade head` directly against the running database, executing the migration files and officially altering your PostgreSQL schema.
+
+## Connecting External Tools (DataGrip, DBeaver, etc.)
+
+Even though the database is running inside a Docker container, you can still easily connect to it using external database management tools like DataGrip, DBeaver, or pgAdmin running on your local macOS machine.
+
+When we set up the `docker-compose.yml`, we mapped the container's internal PostgreSQL port (`5432`) to a port on your local machine (`5433`).
+
+**Why port 5433?** We use `5433` on your host machine to avoid any conflicts just in case you already have a local PostgreSQL instance natively running on the default `5432` port.
+
+To connect DataGrip to the Dockerized database, configure a new PostgreSQL data source with the following connection details (these match your `.env` file):
+
+- **Host:** `localhost`
+- **Port:** `5433` _(Important: Use our mapped port, not 5432)_
+- **User:** `postgres`
+- **Password:** `****` (or whatever is in your `.env` under `DB_PASS`)
+- **Database:** `****`
+
+Just make sure that `bun turbo dev` is actively running so the Docker container is spun up and listening for connections!
