@@ -5,38 +5,37 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.adapters.usgs import USGSClient
 from src.domain.earthquake import Earthquake
-from src.repository.earthquake import EarthquakeRepository
+from src.repository.ingest import IngestRepository
 
 
-async def fetch_and_store_earthquakes(
-    session: AsyncSession,
-    start_time: datetime,
-    end_time: datetime,
-    usgs_client: USGSClient = None,
-) -> list[Earthquake]:
-    if usgs_client is None:
-        usgs_client = USGSClient()
+class PipelineService:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        self.repo = IngestRepository(session)
+        self.client = USGSClient()
 
-    repo = EarthquakeRepository(session)
+    async def fetch_and_store_earthquakes(self, start_time: datetime, end_time: datetime) -> list[Earthquake]:
+        print(f"PipelineService: Fetching from USGS between {start_time} and {end_time}...")
 
-    print(f"[bold blue]Pipeline:[/bold blue] Fetching from USGS between {start_time} and {end_time}...")
+        try:
+            feature_collection = await self.client.get_earthquakes(start_time, end_time)
+            print(f"PipelineService: Found {feature_collection.metadata['count']} earthquakes.")
 
-    try:
-        feature_collection = await usgs_client.get_earthquakes(start_time, end_time)
-        print(f"[bold blue]Pipeline:[/bold blue] Found {feature_collection.metadata['count']} earthquakes.")
+            saved_earthquakes = []
 
-        saved_earthquakes = []
+            for feature in feature_collection.features:
+                earthquake_id = feature.id
+                props = feature.properties
+                geometry = feature.geometry.coordinates
 
-        for feature in feature_collection.features:
-            earthquake_id = feature.id
-            props = feature.properties
+                saved = await self.repo.save(props, earthquake_id, geometry)
+                saved_earthquakes.append(saved)
 
-            saved = await repo.save(props, earthquake_id)
-            saved_earthquakes.append(saved)
+            await self.session.commit()
 
-        print(f"[bold green]Pipeline:[/bold green] Successfully saved/updated {len(saved_earthquakes)} records.")
-        return saved_earthquakes
+            print(f"PipelineService: Successfully saved {len(saved_earthquakes)} records.")
+            return saved_earthquakes
 
-    except Exception as e:
-        print(f"[bold red]Pipeline Error:[/bold red] {e}")
-        raise e
+        except Exception as e:
+            print(f"PipelineService Error: {e}")
+            raise e

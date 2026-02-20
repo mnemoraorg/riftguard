@@ -15,3 +15,16 @@ async def ingest_range_view(payload: IngestRangeRequest, db: AsyncSession = Depe
         return {"status": "success", "count": len(results), "message": f"Ingested {len(results)} earthquakes."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def delete_all_view(db: AsyncSession = Depends(get_db)):
+    service = IngestService(db)
+    try:
+        deleted_count = await service.delete_all()
+        return {
+            "status": "success",
+            "deleted_count": deleted_count,
+            "message": f"Successfully deleted {deleted_count} earthquakes.",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
